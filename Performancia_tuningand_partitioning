@@ -1,0 +1,36 @@
+Query: Performancia tuning és particionálás koncepció
+
+
+1. Főbb történések: - Használjuk a PL/SQL Hierarchical Profilert, innen tudunk javalatokat adni, hogy mit/hogy javítsunk a kódban. Emiatt fogunk keresni benneteket. - Készítettünk az Autorun monitorozó csomagot, amivel a futáshoz tartozó végrehajtási terveket tudjuk elemezni, ezekből is jöttek javaslatok. Emiatt szintén fogunk keresni benneteket. - Session id alapján list particionáltunk 80 táblát. Teljes lista itt (84-4 tábla): m040_table_part_param - Local indexek bevezetése a particionált táblákra (Unique index és PK esetén Pefixed local index használata) - P, R Constraint-eket letiltottuk az alkalmazásban - 1-1 Particióra gyűjtűnk statisztikát a part. Táblákon, nem az egész táblára. A stat. gyűjtést tesztelés miatt bekapcsolt állapotban kell hagynunk a köv. Shipment-ig, utána ITST-n tudunk tesztelni, Dev2-n kikapcsolható.
+
+2. Fejlesztési javaslatok: a) Táblák létrehozás példa: Új session létrehozás során automatikusan történik az új partíciók felvétele a particionált táblákba. Autorun futás során a partíciók adatait töröljük futás elején (delete_input). Amennnyiben nagy méretű session-től függő tábláról van, akkor a köv. Minta script használata javasolt.
+
+CREATE TABLE tsmart.<table_name>
+(
+  session_id                    NUMBER,
+  ...
+)
+partition BY list (SESSION_ID)
+(
+  partition P_0 VALUES (0)
+    tablespace TSMART
+    pctfree 10
+    initrans 1
+    maxtrans 255);
+b) Prefixed Local index létrehozásához példa (Unique indexhez javasolt): A particiós kulcs nevével (azaz session_id) kell kezdeni az oszlop felsorolását.
+
+CREATE UNIQUE INDEX tsmart.<index_name> ON <table_name> (session_id, <cols>) LOCAL;
+c) Non-Unique Local index létrehozásához példa:
+
+CREATE INDEX tsmart.<index_name> ON <table_name> (<cols>) LOCAL;
+
+3. TSMART Statisztika gyűjtés: SMART séma statisztika gyűjtés előtt meg kell álltani az összes Autorun Job-ot, mert különben a futó Job-ok okozta Lock miatt a Shared Pool (+Library Cache) nem fog kiürülni. Ilyen esetben lesz friss statisztikánk, de maradnak a Cache-ben a rossz (régi statisztika alapján készült) végrehajtási tervek.
+
+No_invalidate opcióval érdemes indítani a stat. gyűjtést:
+
+BEGIN
+  dbms_stats.gather_schema_stats(ownname => 'TSMART', no_invalidate => FALSE);
+END;
+Amennyiben mégis maradtak futó autorun Job-kor, akkor keressetek, mert tudok segíteni a shered_pool kiürítésében
+
+ALTER system FLUSH shared_pool;
