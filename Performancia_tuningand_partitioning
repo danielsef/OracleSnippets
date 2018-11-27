@@ -37,9 +37,9 @@ ALTER system FLUSH shared_pool;
 
 
 
-
- · INCREMENTAL = FALSE - letilátsa, mert kipróbáltam a 11gR2 által javasolt beállítás kombináációt, de a teszt alapján az egész táblát vizsgálta, nem csak a partíciót. Több blogbejegyzésben is szerepelt, hogy 11gR2-be ez a funkció bug-os. 
- · GRANULARITY = PARTITION - Partíció szintű statisztikákat gyűjtünk, a tábla szintű global statisztikák pedig majd séma stat. gyűjtés során frissülnek pl. hetente. A futtatások során elegendő a partíció szintű statisztikák ismerete elegendő az Optimizer számára, ez jó trade-off-nak tűnik. · STALE_PERCENT = 25 - Megemeltem 10%-ról 25%-ra. (Erről még egyeztetünk.) · NO_INVALIDATE = FALSE - Stale Partíció stat. gyűjtő Job miatt tettem be. 5 Percenént fut Stale partíció stat. gyűjtő Job, hogy frissítse be a statisztikát. (Erről még egyeztetünk.)
+Particio statisztika gyűjtés beállítások:
+ · INCREMENTAL = FALSE 
+ · GRANULARITY = PARTITION
 
 A beállításoktól a következőket várjuk: · Lecsökken statisztika gyűjtési idő (Global statisztika gyűjtés túl sokáig tart.) · Partíció szintű statisztikák miatt Plan staibilitás kis és nagy ügyfélszámú session-ökre egyaránt
 
