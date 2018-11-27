@@ -1,8 +1,8 @@
 BEGIN
- dbms_scheduler.create_job('RUN_EIM_POST_1197624',
+ dbms_scheduler.create_job('RUN_JOB_1000',
                             job_type            => 'PLSQL_BLOCK',
                             job_action          => 'begin
-                                                        m012_eim_load.run(p_session_id => <p_session_id>);
+                                                        ORA_PCK.run(p_session_id => <p_session_id>);
                                                     END;
                                                     ',
                             number_of_arguments => 0,
@@ -16,6 +16,6 @@ BEGIN
 END;
  
 BEGIN
-  DBMS_SCHEDULER.run_job(job_name        => 'RUN_EIM_POST_1197624',
+  DBMS_SCHEDULER.run_job(job_name        => 'RUN_JOB_1000',
                          use_current_session => FALSE);
 END;
