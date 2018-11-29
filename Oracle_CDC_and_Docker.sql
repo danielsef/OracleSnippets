@@ -39,3 +39,6 @@ docker load < sath89-oracle-ee-12c.tar
 
 
 
+Link:
+https://streamsets.com/documentation/datacollector/latest/help/datacollector/UserGuide/Origins/OracleCDC.html
+
