@@ -1,4 +1,4 @@
---Largest tables in TSMART tablespace
+--Largest tables in tablespace
 SELECT top150.owner, top150.TABLE_NAME, meg, a.num_rows
   FROM dba_tables a,
        (SELECT *
@@ -6,13 +6,13 @@ SELECT top150.owner, top150.TABLE_NAME, meg, a.num_rows
                   FROM (SELECT segment_name TABLE_NAME, owner, bytes
                           FROM dba_segments
                          WHERE segment_type LIKE 'TABLE%'
-                           AND owner ='TSMART'                         
+                           AND owner ='PARAM'                         
                         UNION ALL
                         SELECT i.TABLE_NAME, i.owner, s.bytes
                           FROM dba_indexes i, dba_segments s
                          WHERE s.segment_name = i.index_name
                            AND s.owner = i.owner
-                           AND i.owner ='TSMART'                           
+                           AND i.owner ='PARAM'                           
                            AND s.segment_type LIKE 'INDEX%'
                         UNION ALL
                         SELECT l.TABLE_NAME, l.owner, s.bytes
@@ -25,7 +25,7 @@ SELECT top150.owner, top150.TABLE_NAME, meg, a.num_rows
                         SELECT l.TABLE_NAME, l.owner, s.bytes
                           FROM dba_lobs l, dba_segments s
                          WHERE s.segment_name = l.index_name
-                           AND l.owner ='TSMART'
+                           AND l.owner ='PARAM'
                            AND s.owner = l.owner
                            AND s.segment_type = 'LOBINDEX')
                  GROUP BY TABLE_NAME, owner
@@ -34,11 +34,11 @@ SELECT top150.owner, top150.TABLE_NAME, meg, a.num_rows
          WHERE rownum < 151) top150
  WHERE top150.owner = a.owner
    AND top150.TABLE_NAME = a.TABLE_NAME
-   AND a.OWNER='TSMART'
+   AND a.OWNER='PARAM'
  ORDER BY meg DESC, num_rows DESC;
  
  
---TSMART táblatér elemzés:
+--táblatér elemzés:
 SELECT a.tablespace_name,
        round(SUM(a.bytes) / (1024 * 1024 * 1024)) CURRENT_GB,
        round(SUM(decode(b.maxextend,
@@ -68,31 +68,8 @@ SELECT a.tablespace_name,
          GROUP BY d.tablespace_name) c
  WHERE a.file_id = b.file#(+)
    AND a.tablespace_name = c.tablespace_name
-   AND a.TABLESPACE_NAME='TSMART'
  GROUP BY a.tablespace_name, c.Free / 1024
  ORDER BY tablespace_name;
- 
- 
----mekkora helyet foglalnak el a régi session-ök a táblákban (vagyis mennyi hely fog felszabadulni, ha töröljük a régi partíciókat)
-SELECT
-    owner,
-    segment_name,
-    TRUNC(SUM(bytes)/1024/1024) "MB" 
-FROM
-    dba_segments  s
-WHERE 
- s.owner='TSMART'
-AND    s.segment_type  = 'TABLE PARTITION'
-AND s.tablespace_name='TSMART'
-AND s.segment_name IN ('M001_FLOW_STAT_DTL','M001_GROUP_LI','M001_FLOW_STAT_CORE')  --itt kell felsorolni a táblák nevét
-AND s.partition_name IN (SELECT 'P_'||session_id
-                          FROM m001_session
-                          WHERE STATUS !='sent_to_siebel'
-                          AND last_modified_dt<to_date('20171026', 'YYYYMMDD') --melyik session_id-kat akarjuk törölni
-                        )
-GROUP BY segment_name, owner ;   
- 
- 
  
  
 SELECT
@@ -102,12 +79,12 @@ SELECT
     TRUNC(SUM(s.bytes)/1024/1024) "MB" 
 FROM
     dba_segments  s
-WHERE  s.owner='TSMART'
+WHERE  s.owner='PARAM'
  AND (s.segment_type LIKE 'INDEX%' 
      OR    s.segment_type  = 'TABLE PARTITION' 
      OR s.segment_type = 'LOBSEGMENT'
      OR s.segment_type = 'LOBINDEX')
- AND s.tablespace_name='TSMART'
+ AND s.tablespace_name='PARAM'
 --AND s.segment_name IN ('M001_FLOW_STAT_DTL','M001_GROUP_LI','M001_FLOW_STAT_CORE')  --itt kell felsorolni a táblák nevét
 AND s.partition_name IN (SELECT 'P_'||session_id
                           FROM m001_session
